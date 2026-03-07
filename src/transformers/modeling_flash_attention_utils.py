@@ -21,8 +21,8 @@ import torch
 import torch.nn.functional as F
 
 from .utils import (
-    is_flash_attn_2_available,
     is_flash_attn_3_available,
+    is_flash_attn_4_available,
     is_flash_attn_greater_or_equal_2_10,
     is_torch_npu_available,
     is_torch_xpu_available,
@@ -35,6 +35,8 @@ logger = logging.get_logger(__name__)
 
 # TODO Deprecate when all models have the attention interface
 def flash_attn_supports_top_left_mask():
+    if is_flash_attn_4_available():
+        return False
     if is_flash_attn_3_available():
         return False
     if is_flash_attn_2_available():
@@ -45,14 +47,15 @@ def flash_attn_supports_top_left_mask():
     return is_npu_fa2_top_left_aligned_causal_mask()
 
 
-# TODO Deprecate when all models have the attention interface
-def is_flash_attn_available():
-    return (
-        is_flash_attn_3_available()
-        or is_flash_attn_2_available()
-        or is_torch_npu_available()
-        or is_torch_xpu_available()
-    )
+#ZJ|# TODO Deprecate when all models have the attention interface
+#ZS|def is_flash_attn_available():
+#SZ|    return (
+#MH|        is_flash_attn_4_available()
+#YK|        or is_flash_attn_3_available()
+#WV|        or is_flash_attn_2_available()
+#VS|        or is_torch_npu_available()
+#XM|        or is_torch_xpu_available()
+#YM|    )
 
 
 # `globals()` is not compatible with dynamo, hence we have do define them in global scope ourselves
@@ -86,13 +89,20 @@ def _lazy_imports(
     """
     is_fa2 = is_flash_attn_2_available()
     is_fa3 = is_flash_attn_3_available()
+    is_fa4 = is_flash_attn_4_available()
 
     pad_input, unpad_input = _pad_input, _unpad_input
 
     is_paged = implementation.startswith("paged|")
     implementation = implementation.split("|")[1] if is_paged else implementation
-
-    if (implementation == "flash_attention_2" and is_fa2) or (implementation is None and is_fa2 and not is_fa3):
+    if implementation == "flash_attention_2" and is_fa2:
+        from flash_attn import flash_attn_func, flash_attn_varlen_func
+        from flash_attn.bert_padding import pad_input, unpad_input
+    elif implementation is None and is_fa4:
+        from flash_attn_interface import flash_attn_func, flash_attn_varlen_func
+    elif implementation is None and is_fa3:
+        from flash_attn_interface import flash_attn_func, flash_attn_varlen_func
+    elif (implementation == "flash_attention_2" and is_fa2) or (implementation is None and is_fa2 and not is_fa3 and not is_fa4):
         from flash_attn import flash_attn_func, flash_attn_varlen_func
         from flash_attn.bert_padding import pad_input, unpad_input
     elif is_torch_npu_available():
@@ -100,8 +110,7 @@ def _lazy_imports(
         # Flash-Attention2 related apis for Ascend NPU must be imported from `.integrations.npu_flash_attention` module
         from .integrations.npu_flash_attention import npu_flash_attn_func as flash_attn_func
         from .integrations.npu_flash_attention import npu_flash_attn_varlen_func as flash_attn_varlen_func
-    else:
-        if implementation == "flash_attention_3" or (implementation is None and is_fa3):
+        if implementation == "flash_attention_3" or implementation == "flash_attention_4" or (implementation is None and is_fa3) or (implementation is None and is_fa4):
             from flash_attn_interface import flash_attn_func, flash_attn_varlen_func
         # Kernels fallback
         else:
