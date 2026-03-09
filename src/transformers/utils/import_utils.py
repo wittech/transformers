@@ -937,8 +937,12 @@ def is_flash_attn_2_available() -> bool:
 
 @lru_cache
 def is_flash_attn_4_available() -> bool:
-    return is_torch_cuda_available() and _is_package_available("flash_attn_4")[0]
+    return is_torch_cuda_available() and _is_package_available("flash-attn-4")[0]
 
+
+@lru_cache
+def is_flash_attn_3_available() -> bool:
+    return is_torch_cuda_available() and _is_package_available("flash_attn_3")[0]
 
 
 @lru_cache
