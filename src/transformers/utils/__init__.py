@@ -130,6 +130,7 @@ from .import_utils import (
     is_essentia_available,
     is_faiss_available,
     is_fbgemm_gpu_available,
+    is_flash_attn_2_available,
     is_flash_attn_3_available,
     is_flash_attn_4_available,
     is_flash_attn_greater_or_equal,
