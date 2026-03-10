@@ -26,7 +26,6 @@ from .utils import (
     is_flash_attn_4_available,
     is_flash_attn_greater_or_equal_2_10,
     is_torch_npu_available,
-    is_torch_xpu_available,
     logging,
 )
 
@@ -99,8 +98,12 @@ def _lazy_imports(
     if implementation == "flash_attention_2" and is_fa2:
         from flash_attn import flash_attn_func, flash_attn_varlen_func
         from flash_attn.bert_padding import pad_input, unpad_input
-    elif implementation is None and is_fa4:
+    elif implementation == "flash_attention_4" and is_fa4:
+        from flash_attn.cute import flash_attn_func, flash_attn_varlen_func
+    elif implementation == "flash_attention_3" and is_fa3:
         from flash_attn_interface import flash_attn_func, flash_attn_varlen_func
+    elif implementation is None and is_fa4:
+        from flash_attn.cute import flash_attn_func, flash_attn_varlen_func
     elif implementation is None and is_fa3:
         from flash_attn_interface import flash_attn_func, flash_attn_varlen_func
     elif (implementation == "flash_attention_2" and is_fa2) or (implementation is None and is_fa2 and not is_fa3 and not is_fa4):
