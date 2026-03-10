@@ -90,7 +90,9 @@ def _lazy_imports(
     is_fa2 = is_flash_attn_2_available()
     is_fa3 = is_flash_attn_3_available()
     is_fa4 = is_flash_attn_4_available()
-
+    print(f"is_fa2: {is_fa2}")
+    print(f"is_fa3: {is_fa3}")
+    print(f"is_fa4: {is_fa4}")
     pad_input, unpad_input = _pad_input, _unpad_input
 
     is_paged = implementation.startswith("paged|")
