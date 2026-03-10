@@ -1670,9 +1670,14 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
             #     raise ImportError(f"{preface} the package flash_attn_3 seems to be not installed.")
             
             # See https://github.com/huggingface/transformers/issues/41179
+            # try:
+            #     importlib.metadata.version("flash_attn_3")
+            # except importlib.metadata.PackageNotFoundError:
+            #     return False
             try:
-                importlib.metadata.version("flash_attn_3")
-            except importlib.metadata.PackageNotFoundError:
+                from flash_attn.flash_attn_interface import flash_attn_func
+                return True
+            except ImportError:
                 return False
 
             if torch.cuda.is_available():
@@ -1749,8 +1754,11 @@ class PreTrainedModel(nn.Module, EmbeddingAccessMixin, ModuleUtilsMixin, PushToH
         if not is_flash_attn_4_available():
             preface = "FlashAttention4 has been toggled on, but it cannot be used due to the following error:"
 
-            if importlib.util.find_spec("flash-attn-4") is None:
-                raise ImportError(f"{preface} the package flash_attn_4 seems to be not installed.")
+            try:
+                from flash_attn.cute import flash_attn_func
+                return True
+            except ImportError:
+                return False
 
             if torch.cuda.is_available():
                 major, _ = torch.cuda.get_device_capability()
